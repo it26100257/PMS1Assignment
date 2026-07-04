@@ -32,29 +32,29 @@
 #define SAVE_FILE "savegame.dat"
 #define LOG_FILE "gamelog.txt"
 
-int  cellIsEmpty(int r, int c); //done
-void initializeMap();           //done
-void placeWalls();              //done
-void placeTreasures();          //done
-void placeTraps();              //done
-void placeHealthPacks();        //done
-void placeKeys();               //done
-void placeDoors();              //done
-void placePlayers();            //done
-void printMap();                //done
-void movePlayer(int index);     //done
-int  isValidMove(int x, int y); //done             
-void processTile(int index);    //done
-int  checkGameEnd();            //done
-void gameLoop();                //done
-void saveGame();                //done
-int  loadGame();                //done
-void showScores();              //done, used bubble sort
-int  remainingTreasures();      //done
-void addLog(int r, char *m);    //done
-void printRecentLog();          //done
-void saveLog();                 //done
-void showStats();                             //to do
+int  cellIsEmpty(int r, int c); 
+void initializeMap();           
+void placeWalls();              
+void placeTreasures();          
+void placeTraps();             
+void placeHealthPacks();        
+void placeKeys();               
+void placeDoors();              
+void placePlayers();            
+void printMap();                
+void movePlayer(int index);     
+int  isValidMove(int x, int y);              
+void processTile(int index);    
+int  checkGameEnd();            
+void gameLoop();                
+void saveGame();                
+int  loadGame();                
+void showScores();              //used bubble sort
+int  remainingTreasures();      
+void addLog(int r, char *m);    //circular buffer logic
+void printRecentLog();          
+void saveLog();                 
+void showStats();                            
 
 char map[ROWS][COLS], eventLog[MAX_ENTRIES][MSG_LENGTH];
 int  hiddenTrap[ROWS][COLS];
@@ -158,7 +158,7 @@ void placeHealthPacks(){
 		c = rand() % COLS;
 
 		if(cellIsEmpty(r, c)){
-			map[r][c] = HEALTH_PACKS;
+			map[r][c] = HEALTH_SYMBOL;
 			packsPlaced++;
 		}
 	}
@@ -196,7 +196,6 @@ void placeDoors(){
 
 void placePlayers(){
 	int r, c, m;
-	int playerCount;
 
 	for (int i = 0; i< playerCount; i++){
 		do{
@@ -223,7 +222,7 @@ void printMap(){
 	//render grid
 	for(int r = 0; r<ROWS; r++){
 		for(int c= 0; c<COLS; c++){
-			printf("%c", map[r][c]);
+			printf("%c ", map[r][c]);
 		}
 	}
 
@@ -271,9 +270,9 @@ void movePlayer(int index){
 					  break;
 				case 'S': dx= 1; 
 				          break;
-				case 'A': dx= -1;
+				case 'A': dy= -1;
 				          break;
-				case 'D': dx =1;
+				case 'D': dy =1;
 					  break;
 				default: 
 					  printf("invalid move '%c' skipped", move);
@@ -431,9 +430,9 @@ void gameLoop(){
 			printf("game saved~~");
 		}
 	}
-	//saveLog();
+	saveLog();
 	showScores();
-	//showStats();
+	showStats();
 }
 
 void saveGame(){
