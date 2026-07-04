@@ -49,12 +49,12 @@ int  checkGameEnd();            //done
 void gameLoop();                //done
 void saveGame();                //done
 int  loadGame();                //done
-void showScores();              //started, so eepy
-int  remainingTreasures();      //to do******
-void addLog(int r, char *m);                  //1
-void printRecentLog();                        //2
-void saveLog();                               //3
-void showStats();                             //4
+void showScores();              //done, used bubble sort
+int  remainingTreasures();      //done
+void addLog(int r, char *m);    //done
+void printRecentLog();          //done
+void saveLog();                 //done
+void showStats();                             //to do
 
 char map[ROWS][COLS], eventLog[MAX_ENTRIES][MSG_LENGTH];
 int  hiddenTrap[ROWS][COLS];
@@ -431,8 +431,8 @@ void gameLoop(){
 			printf("game saved~~");
 		}
 	}
-	//saveLogToFile();
-	//showScores();
+	//saveLog();
+	showScores();
 	//showStats();
 }
 
@@ -479,19 +479,126 @@ void showScores(){
 	printf("                    GAME OVER                        \n");	
         printf("                   LEADERBOARD                       \n");
 
-	for(int i=0; i<playerCount; i++){
-		if(players[i].alive){
-		        int new_score = players[i].score + (players[i].health/2);
-			printf("%s final score: %d\n",players[i].name, new_score);
-		}else {
-			printf("%s final score: %d\n",players[i].name, players[i].score);
+	//create copy for this func
+	player sorted[MAX_PLAYERS];
+	for (int i=0; i<playerCount; i++){
+		sorted[i] = players[i];
+        }
+
+	for (int i=0; i<playerCount -1; i++){
+		for (int j=0; j<playerCount -i -1; j++){
+			int score1, score2;
+			if(sorted[j].alive){
+				score1= sorted[j].score + (sorted[j].health/2);
+			} else{
+				score1 = sorted[j].score;
+			}
+
+			if(sorted[j+1].alive){
+				score2 = sorted[j+1].score + (sorted[j+1].health/2);
+			} else{
+				score2 = sorted[j+1].score;
+			}
+
+			if(score1 < score2){
+				player swap= sorted[j];
+				sorted[j] = sorted[j+1];
+				sorted[j+1] = swap;
+			}
 		}
 	}
-	//rank
-	//display it
-	//check for tie
+        
+	for(int i=0; i<playerCount; i++){
+		if(sorted[i].alive){
+			int bonus = sorted[i].health/2;
+			int total = sorted[i].score + bonus;
+			printf("%d. %s (%c): %d +%d(bonus) = %d\n", i+1, sorted[i].name, sorted[i].symbol, sorted[i].score, bonus, total);
+		} else {
+			printf("%d. %s (%c): %d(dead)\n", i+1, sorted[i].name, sorted[i].symbol, sorted[i].score);
+		}
+	}
+
+	if (playerCount >=1 && sorted[0].alive){
+		int top1= sorted[0].score + (sorted[0].health/2);
+
+		if (playerCount >=2 &&sorted[1].alive){
+			int top2 = sorted[1].score + (sorted[1].health/2);
+
+			if(top1==top2){
+				printf("\nTIE between players %s and %s with %d points\n",sorted[0].name, sorted[1].name, top1);
+			} else { 
+				printf("\nWINNER:%s(%c) with %d points!\n", sorted[0].name, sorted[0].symbol,top1);
+			}
+		} else if (playerCount>=2 && !sorted[1].alive){
+			printf("\nWINNER:%s (%c) with %d points!\n",sorted[0].name, sorted[0].symbol, top1);
+		} else{
+			printf("\nWINNER: %s (%c) with %d points!\n", sorted[0].name, sorted[0].symbol, top1);
+		}
+	} else if(playerCount >=1 && !sorted[0].alive) {
+		printf("\nALL PLAYERS ARE DEAD!\n");
+	}
 }
-//TEMPORARYYYYYYYYYYYYYYYY
+
 int remainingTreasures(){
-	return 0;
+	int count =0;
+	for(int r= 0; r<ROWS; r++){
+		for(int c=0; c<COLS; c++){
+			if(map[r][c]==TREASURE_SYMBOL){
+				count ++;
+			}
+		}
+	}
+	return count;
+}
+
+void addLog(int r, char*m){
+	char msg[MSG_LENGTH];
+	sprintf(msg, "[R%d] %s",r, m);
+
+	if(logCount< MAX_ENTRIES) {
+		strcpy(eventLog[logCount], msg);
+		logCount++;
+	} else if(logCount == MAX_ENTRIES){
+		for(int i=0; i<MAX_ENTRIES -1; i++){
+			strcpy(eventLog[i], eventLog[i+1]);
+		}
+		strcpy(eventLog[MAX_ENTRIES - 1], msg);
+	}
+}
+
+void printRecentLog(){
+	printf("\nrecent events: \n");
+	if(logCount < ENTRIES_MADE){
+		for(int i=0; i<logCount; i++){
+			printf("%s\n", eventLog[i]);
+		}
+	} else if (logCount>= ENTRIES_MADE){
+		int start = logCount - ENTRIES_MADE;
+		for(int i= start; i<logCount; i++){
+			printf(" %s\n", eventLog[i]);
+		}
+	}
+}
+
+void saveLog(){
+	FILE *file =fopen(LOG_FILE, "w");
+	if(file ==NULL){
+		printf("error!! couldnt open file");
+		return;
+	}
+	for(int i=0; i<logCount; i++){
+		fprintf(file, "%s\n", eventLog[i]);
+	}
+
+	fclose(file);
+}
+
+void showStats(){
+	printf("+++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+	printf("                 PLAYER STATISTICS                 \n");
+	printf("Player     Treasures     Traps     Health packs     Keys     Doors\n");
+
+	for(int i=0; i<playerCount; i++){
+		printf("%s %-10d %-10d %-10d %-10d %-10d %-10d %-10d\n", players[i].name, players[i].movesMade, players[i].treasuresFound, players[i].trapsTriggered, players[i].damageTaken, players[i].healthPacksUsed, players[i].keysCollected, players[i].doorsUnlocked);
+	}
 }
