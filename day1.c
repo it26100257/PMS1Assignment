@@ -33,6 +33,7 @@
 #define LOG_FILE "gamelog.txt"
 
 int  cellIsEmpty(int r, int c); 
+void initializeGame();
 void initializeMap();           
 void placeWalls();              
 void placeTreasures();          
@@ -72,7 +73,77 @@ typedef struct{
 player players[MAX_PLAYERS];
 
 int main() {
-   initializeMap();
+    srand((unsigned int)time(NULL));
+    int choice;
+    
+    while (1) {
+        printf("========================================\n");
+        printf("   QUEST FOR THE LOST TREASURE\n");
+        printf("========================================\n");
+        printf("1. New Game\n");
+        printf("2. Load Game\n");
+        printf("3. Exit\n");
+        printf("========================================\n");
+        printf("Enter choice: ");
+        scanf("%d", &choice);
+        getchar();
+        
+        switch(choice) {
+            case 1:
+                initializeGame();
+                gameLoop();
+                break;
+            case 2:
+                if (loadGame() == 1) {
+                    printf("Game loaded successfully!\n");
+                    gameLoop();
+                } else {
+                    printf("No save file found. Starting new game...\n");
+                    initializeGame();
+                    gameLoop();
+                }
+                break;
+            case 3:
+                printf("\nGoodbye! Thanks for playing!\n");
+                return 0;
+            default:
+                printf("Invalid choice! Please enter 1, 2, or 3.\n");
+        }
+    }
+}
+
+void initializeGame(){
+    roundCounter = 0;
+    logCount = 0;
+
+    do{
+        printf("Enter number of players (1-3): ");
+        scanf("%d", &playerCount);
+        getchar();
+    } while(playerCount < 1 || playerCount > MAX_PLAYERS);
+
+    for(int i = 0; i < MAX_PLAYERS; i++){
+        if(i < playerCount){
+            sprintf(players[i].name, "Player %d", i + 1);
+            players[i].symbol = (i == 0) ? '1' : (i == 1) ? '2' : '3';
+            players[i].health = STARTING_HP;
+            players[i].score = 0;
+            players[i].keys = 0;
+            players[i].alive = true;
+            players[i].movesMade = 0;
+            players[i].treasuresFound = 0;
+            players[i].trapsTriggered = 0;
+            players[i].damageTaken = 0;
+            players[i].healthPacksUsed = 0;
+            players[i].keysCollected = 0;
+            players[i].doorsUnlocked = 0;
+        } else {
+            players[i].alive = false;
+        }
+    }
+
+    initializeMap();
+    addLog(roundCounter, "Game started");
 }
 
 //check whether cell is empty
@@ -93,8 +164,8 @@ void initializeMap() {
 	    map[ROWS - 1][c] = WALL_SYMBOL; //bottom
     }
     for (r=0; r< ROWS; r++){
-            map[0][r] = WALL_SYMBOL; //left
-	    map[COLS - 1][r] = WALL_SYMBOL; //right
+            map[r][0] = WALL_SYMBOL; //left
+	    map[r][COLS-1] = WALL_SYMBOL; //right
     }
     // Calling all place helpers
     placeWalls();
