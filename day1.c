@@ -161,11 +161,11 @@ void initializeMap() {
 
     for (c=0; c< COLS; c++){
 	    map[0][c] = WALL_SYMBOL; //top border 
-	    map[COLS - 1][c] = WALL_SYMBOL; //bottom
+	    map[ROWS - 1][c] = WALL_SYMBOL; //bottom
     }
     for (r=0; r< ROWS; r++){
-            map[0][r] = WALL_SYMBOL; //left
-	        map[ROWS-1][r] = WALL_SYMBOL; //right
+            map[r][0] = WALL_SYMBOL; //left
+	        map[r][COLS-1] = WALL_SYMBOL; //right
     }
     // Calling all place helpers
     placeWalls();
