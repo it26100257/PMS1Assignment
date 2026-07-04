@@ -57,7 +57,7 @@ void printRecentLog();
 void saveLog();                 
 void showStats();                            
 
-char map[ROWS][COLS], eventLog[MAX_ENTRIES][MSG_LENGTH];
+char map[ROWS][COLS], eventLog[MAX_ENTRIES][MSG_LENGTH], msg[100];
 int  hiddenTrap[ROWS][COLS];
 int playerCount = 0;
 int roundCounter = 0;
@@ -65,8 +65,9 @@ int logCount = 0;
 
 typedef struct{
       char name[40];
+	  char symbol;
       int movesMade, treasuresFound, trapsTriggered, damageTaken, healthPacksUsed, keysCollected;
-      int doorsUnlocked, health, score, keys, x, y, symbol;
+      int doorsUnlocked, health, score, keys, x, y;
       bool alive;    
 }player;
 
@@ -266,7 +267,7 @@ void placeDoors(){
 }
 
 void placePlayers(){
-	int r, c, m;
+	int r, c;
 
 	for (int i = 0; i< playerCount; i++){
 		do{
@@ -303,7 +304,7 @@ void printMap(){
 	printf("PLAYER STATUS:\n");
 	for (int i = 0; i<playerCount; i++){
 		if (players[i].alive){
-		printf(" %c %s: HP=%d, Score=%d, Kes=%d, Position=(%d,%d)\n",
+		printf(" %c. %s: HP=%d, Score=%d, Keys=%d, Position=(%d,%d)\n",
 			players[i].symbol, players[i].name,
 		        players[i].health, players[i].score,
 		        players[i].keys, players[i].x, players[i].y);
@@ -314,88 +315,98 @@ void printMap(){
         printf("treasures remaining: %d\n", remainingTreasures());
         printf("----------------------------------------------\n");
 
-        //recent log
-	printf("\nRECENT EVENTS:\n");
-        int start = (logCount < ENTRIES_MADE) ? 0 : logCount - ENTRIES_MADE;
-        for(int i = start; i<logCount; i++){
-               printf(" %s\n", eventLog[i]);
-	}
+        printRecentLog();
         printf("---------------------------------------------\n");
 }
 
 void movePlayer(int index){
-	if(!players[index].alive){
-		return;
-	}	
-		char move;
-		int movesMade= 0;
-		printf("%s (%c) - enter 4 moves(WASD):\n", players[index].name, players[index].symbol);
+    if(!players[index].alive){
+        return;
+    }
+    char moves[MAX_MOVES+1];
+    int movesMade = 0;
 
-		//get 4 moves
-		for (int i=0; i<MAX_MOVES; i++){
-			printf("move %d: ", i+1);
-			scanf(" %c", &move);
-			move= toupper(move);
+    printf("%s (%c) - Enter 4 moves (WASD): ",
+           players[index].name, players[index].symbol);
 
-			int dx=0, dy= 0; //change made in position
-			switch(move){
-				case 'W': dx= -1; 
-					  break;
-				case 'S': dx= 1; 
-				          break;
-				case 'A': dy= -1;
-				          break;
-				case 'D': dy =1;
-					  break;
-				default: 
-					  printf("invalid move '%c' skipped", move);
-					  i--;
-					  continue;
-			}
-			//new position of player.
-			int newX = players[index].x + dx;
-			int newY = players[index].y + dy;
-                        
-			if(!isValidMove(newX, newY)){
-				printf("invalid move!!\n");
-				continue;
-			}
+    scanf("%4s", moves);
 
-			//locked doors
-			if(map[newX][newY] == DOOR_SYMBOL){
-				if(players[index].keys > 0){
-					players[index].keys--;
-					players[index].doorsUnlocked++;
-					map[newX][newY] = EMPTY_SYMBOL;
-					printf("door unlocked! keys remaining: %d\n", players[index].keys);
-				} else{
-					printf("door locked! you have no keys.");
-					continue;
-				}
-			}
-			//empty tile on previous position
-			map[players[index].x][players[index].y] = EMPTY_SYMBOL;
-			//update player position
-			players[index].x = newX;
-			players[index].y = newY;
-		        players[index].movesMade++;
-		        map[newX][newY] = players[index].symbol;
-		        
-			processTile(index);
+    for(int i = 0; moves[i] != '\0'; i++){
 
-			//check if player died after processtile..
-			if (!players[index].alive){
-				map[newX][newY] = EMPTY_SYMBOL;
-				printf("%s has died!", players[index].name);
-				break;
-			}
+        char move = toupper(moves[i]);
 
-			movesMade++;
-		}
+        int dx = 0, dy = 0;
 
-		if(movesMade == MAX_MOVES){
-			printf("turn complete, 4 moves made");
-		}
+        switch(move){
+            case 'W':
+                dx = -1;
+                break;
+
+            case 'S':
+                dx = 1;
+                break;
+
+            case 'A':
+                dy = -1;
+                break;
+
+            case 'D':
+                dy = 1;
+                break;
+
+            default:
+                printf("Invalid move '%c' skipped.\n", move);
+                continue;
+        }
+
+        // Calculate new position
+        int newX = players[index].x + dx;
+        int newY = players[index].y + dy;
+
+        if(!isValidMove(newX, newY)){
+            printf("Invalid move!\n");
+            continue;
+        }
+
+        
+        if(map[newX][newY] == DOOR_SYMBOL){
+            if(players[index].keys > 0){
+                players[index].keys--;
+                players[index].doorsUnlocked++;
+                map[newX][newY] = EMPTY_SYMBOL;
+                printf("Door unlocked! Keys remaining: %d\n",
+                       players[index].keys);
+            }
+            else{
+                printf("Door locked! You have no keys.\n");
+                continue;
+            }
+        }
+
+        // Remove player from old position
+        map[players[index].x][players[index].y] = EMPTY_SYMBOL;
+
+        // Update position
+        players[index].x = newX;
+        players[index].y = newY;
+        players[index].movesMade++;
+
+        processTile(index);
+
+        if(players[index].alive){
+            map[newX][newY] = players[index].symbol;
+        }
+
+        if(!players[index].alive){
+            map[newX][newY] = EMPTY_SYMBOL;
+            printf("%s has died!\n", players[index].name);
+            break;
+        }
+
+        movesMade++;
+    }
+
+    printf("Turn complete. %d move(s) made.\n", movesMade);
 }
 
 int isValidMove(int x, int y){
@@ -421,12 +432,18 @@ void processTile(int index){
 		players[index].damageTaken+= TRAP_DAMAGE;
 		hiddenTrap[x][y] = 0;
 
-                printf("%s triggered a trap!! new HP: %d\n", players[index].name, players[index].health);
+        printf("%s triggered a trap!! new HP: %d\n", players[index].name, players[index].health);
+
+        sprintf(msg, "%s triggered a trap!", players[index].name);
+        addLog(roundCounter, msg);
 	
 	        if(players[index].health <= 0){
 		        players[index].health = 0;
 		        players[index].alive = 0;
 		        printf("%s has been eliminated!\n", players[index].name);
+
+                sprintf(msg, "%s was eliminated.", players[index].name);
+                addLog(roundCounter, msg);
 	         }
 		return;
 	}
@@ -435,12 +452,15 @@ void processTile(int index){
 	if(map[x][y] ==TREASURE_SYMBOL){
 		players[index].score+= TREASURE_SCORE;
                 players[index].treasuresFound++;
-		printf("treasure found! new SCORE:%d\n", players[index].score);
+		printf("%s found a treasure! SCORE:%d\n",players[index].name, players[index].score);
+		
+        sprintf(msg, "%s found a treasure!", players[index].name);
+        addLog(roundCounter, msg);
 		return;
 	}
 	if(map[x][y] == HEALTH_SYMBOL){
                 if(players[index].health == MAX_HEALTH){
-			printf("already at maxx health 100!\n");
+			printf("already at max health 100!\n");
 		} else{
 			players[index].health+= HEALTH_RESTORE;
 			if(players[index].health> MAX_HEALTH){
@@ -449,13 +469,20 @@ void processTile(int index){
 			players[index].healthPacksUsed++;
 		
 		        printf("%s health is at %d, %d health packs used.\n", players[index].name, players[index].health, players[index].healthPacksUsed);
+				
+                sprintf(msg, "%s used a health pack.", players[index].name);
+                addLog(roundCounter, msg);
 		}
+
 		return;
 	}
 	if(map[x][y]==KEY_SYMBOL){
 		players[index].keys++;
-                players[index].keysCollected++;
+        players[index].keysCollected++;
 		printf("%s has collected a key! current key count: %d\n", players[index].name, players[index].keys);
+		
+        sprintf(msg, "%s collected a key.", players[index].name);
+        addLog(roundCounter, msg);
 		return;
 	}
 }
@@ -668,9 +695,9 @@ void saveLog(){
 void showStats(){
 	printf("+++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 	printf("                 PLAYER STATISTICS                 \n");
-	printf("Player     Treasures     Traps     Health packs     Keys     Doors\n");
+	printf("Player     Treasures     Traps     Health packs     Keys     Doors     moves made     damage taken\n");
 
 	for(int i=0; i<playerCount; i++){
-		printf("%s %-10d %-10d %-10d %-10d %-10d %-10d %-10d\n", players[i].name, players[i].movesMade, players[i].treasuresFound, players[i].trapsTriggered, players[i].damageTaken, players[i].healthPacksUsed, players[i].keysCollected, players[i].doorsUnlocked);
+		printf("%-15s %-10d %-10d %-15d %-10d %-10d %-10d %-10d\n", players[i].name, players[i].treasuresFound, players[i].trapsTriggered, players[i].healthPacksUsed, players[i].keysCollected, players[i].doorsUnlocked, players[i].movesMade, players[i].damageTaken);
 	}
 }

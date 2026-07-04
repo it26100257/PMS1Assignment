@@ -1,0 +1,24 @@
+[R0] Game started
+[R0] Player 1 found a treasure!
+[R1] Player 1 found a treasure!
+[R1] Player 1 found a treasure!
+[R3] Player 1 found a treasure!
+[R4] Player 1 triggered a trap!
+[R4] Player 1 found a treasure!
+[R5] Player 1 collected a key.
+[R6] Player 1 found a treasure!
+[R7] Player 1 collected a key.
+[R8] Player 1 found a treasure!
+[R8] Player 1 collected a key.
+[R9] Player 1 found a treasure!
+[R13] Player 1 found a treasure!
+[R13] Player 1 triggered a trap!
+[R14] Player 1 found a treasure!
+[R15] Player 1 used a health pack.
+[R16] Player 1 triggered a trap!
+[R18] Player 1 found a treasure!
+[R19] Player 1 triggered a trap!
+[R19] Player 1 used a health pack.
+[R20] Player 1 used a health pack.
+[R20] Player 1 triggered a trap!
+[R20] Player 1 found a treasure!
