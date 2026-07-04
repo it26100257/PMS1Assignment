@@ -295,6 +295,7 @@ void printMap(){
 		for(int c= 0; c<COLS; c++){
 			printf("%c ", map[r][c]);
 		}
+		printf("\n");
 	}
 
 	//HUD
@@ -326,13 +327,14 @@ void movePlayer(int index){
 	if(!players[index].alive){
 		return;
 	}	
-		char move, movesMade= 0;
+		char move;
+		int movesMade= 0;
 		printf("%s (%c) - enter 4 moves(WASD):\n", players[index].name, players[index].symbol);
 
 		//get 4 moves
 		for (int i=0; i<MAX_MOVES; i++){
 			printf("move %d: ", i+1);
-			scanf("%c", &move);
+			scanf(" %c", &move);
 			move= toupper(move);
 
 			int dx=0, dy= 0; //change made in position
