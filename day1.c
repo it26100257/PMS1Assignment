@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 
+//define all given values.
 #define ROWS 15
 #define COLS 15
 #define WALLS 30
@@ -50,19 +51,22 @@ int  checkGameEnd();
 void gameLoop();                
 void saveGame();                
 int  loadGame();                
-void showScores();              //used bubble sort
+void showScores();             
 int  remainingTreasures();      
-void addLog(int r, char *m);    //circular buffer logic
+void addLog(int r, char *m);   
 void printRecentLog();          
 void saveLog();                 
 void showStats();                            
 
+
+//global variable, used in several functions
 char map[ROWS][COLS], eventLog[MAX_ENTRIES][MSG_LENGTH], msg[100];
 int  hiddenTrap[ROWS][COLS];
 int playerCount = 0;
 int roundCounter = 0;
 int logCount = 0;
 
+//player struct, individual player related data 
 typedef struct{
       char name[40];
 	  char symbol;
@@ -77,6 +81,7 @@ int main() {
     srand((unsigned int)time(NULL));
     int choice;
     
+    //game menu for  player to choose what they want
     while (1) {
         printf("========================================\n");
         printf("   QUEST FOR THE LOST TREASURE\n");
@@ -89,6 +94,8 @@ int main() {
         scanf("%d", &choice);
         getchar();
         
+
+	//switch function to decide what to do for each option 
         switch(choice) {
             case 1:
                 initializeGame();
@@ -105,7 +112,7 @@ int main() {
                 }
                 break;
             case 3:
-                printf("\nGoodbye! Thanks for playing!\n");
+                printf("\nThanks for playing!\n");
                 return 0;
             default:
                 printf("Invalid choice! Please enter 1, 2, or 3.\n");
@@ -113,10 +120,13 @@ int main() {
     }
 }
 
+//function to start game and assign stating values for all player datas
 void initializeGame(){
     roundCounter = 0;
     logCount = 0;
+    
 
+    //gets player count
     do{
         printf("Enter number of players (1-3): ");
         scanf("%d", &playerCount);
@@ -151,6 +161,8 @@ void initializeGame(){
 int  cellIsEmpty(int r, int c){
 	return (map[r][c] == EMPTY_SYMBOL && hiddenTrap[r][c] == 0);
 }
+
+//zero fills arrays, places border walls and calls all place functions in that order 
 void initializeMap() {
     int r, c; //rows and columns 
     for (int r=0; r<ROWS; r++){
@@ -178,6 +190,7 @@ void initializeMap() {
     placePlayers();
 }
 
+//randomly places 30 walls inside the map
 void placeWalls(){
      int wallIsPlaced = 0;
      int r, c;
@@ -193,6 +206,8 @@ void placeWalls(){
     }
 }
 
+
+//randomly places 12 treasures, inside the borders
 void placeTreasures(){
      int treasuresPlaced= 0;
      int r, c;
@@ -207,6 +222,7 @@ void placeTreasures(){
       }	     
 }
 
+//randomly places 10 traps in the map
 void placeTraps(){
 	int trapsPlaced= 0;
 	int r, c;
@@ -221,6 +237,7 @@ void placeTraps(){
 	}
 }	
 
+//randomly places health packs
 void placeHealthPacks(){
 	int packsPlaced = 0;
 	int r, c;
@@ -236,6 +253,7 @@ void placeHealthPacks(){
 	}
 }
 
+//randomly places keys in the map
 void placeKeys(){
 	int keysPlaced = 0;
         int r, c;
@@ -251,6 +269,7 @@ void placeKeys(){
 	}
 }
 
+//randomly places doors in the map
 void placeDoors(){
 	int doorsPlaced = 0;
 	int r, c;
@@ -266,6 +285,7 @@ void placeDoors(){
 	}
 }
 
+//places the players at random locations at the start of the game
 void placePlayers(){
 	int r, c;
 
@@ -282,6 +302,7 @@ void placePlayers(){
 	}
 }
 
+//prints header, renders grid and player HUD and recent event log
 void printMap(){
 	system("clear");
 
@@ -291,7 +312,7 @@ void printMap(){
 	printf("                   ROUND:%d                    \n", roundCounter);
 	printf("+++++++++++++++++++++++++++++++++++++++++++++++\n");
         
-	//render grid
+	//render grid, prints/re prints the map for each round
 	for(int r = 0; r<ROWS; r++){
 		for(int c= 0; c<COLS; c++){
 			printf("%c ", map[r][c]);
@@ -299,7 +320,7 @@ void printMap(){
 		printf("\n");
 	}
 
-	//HUD
+	//HUD, prints player details and updates after each round, and shows recent log of 4 events
 	printf("\n----------------------------------------------\n");
 	printf("PLAYER STATUS:\n");
 	for (int i = 0; i<playerCount; i++){
@@ -319,12 +340,13 @@ void printMap(){
         printf("---------------------------------------------\n");
 }
 
+//wasd moves, takes 4 inputs at once and goes through one at a time 
 void movePlayer(int index){
     if(!players[index].alive){
         return;
     }
-    char moves[MAX_MOVES+1];
-    int movesMade = 0;
+    char moves[MAX_MOVES+1]; // +1 to eliminate bugs caused by null terminator
+    int movesMade = 0; //initialize moves made to 0 at the start of game
 
     printf("%s (%c) - Enter 4 moves (WASD): ",
            players[index].name, players[index].symbol);
@@ -333,7 +355,7 @@ void movePlayer(int index){
 
     for(int i = 0; moves[i] != '\0'; i++){
 
-        char move = toupper(moves[i]);
+        char move = toupper(moves[i]); //so that wasd is case insensitive
 
         int dx = 0, dy = 0;
 
@@ -362,13 +384,14 @@ void movePlayer(int index){
         // Calculate new position
         int newX = players[index].x + dx;
         int newY = players[index].y + dy;
-
+        
+	//check if valid move
         if(!isValidMove(newX, newY)){
             printf("Invalid move!\n");
             continue;
         }
 
-        
+        //deals with locked doors
         if(map[newX][newY] == DOOR_SYMBOL){
             if(players[index].keys > 0){
                 players[index].keys--;
@@ -390,9 +413,12 @@ void movePlayer(int index){
         players[index].x = newX;
         players[index].y = newY;
         players[index].movesMade++;
-
+        
+	//call process tile 
         processTile(index);
+        
 
+	//update positionof player after their turn, depending on whether they are dead or alive
         if(players[index].alive){
             map[newX][newY] = players[index].symbol;
         }
@@ -409,6 +435,7 @@ void movePlayer(int index){
     printf("Turn complete. %d move(s) made.\n", movesMade);
 }
 
+//function to make walking into walls and borders invalid.
 int isValidMove(int x, int y){
 	if(x<0 || x>=ROWS){
 		return 0;
@@ -458,6 +485,8 @@ void processTile(int index){
         addLog(roundCounter, msg);
 		return;
 	}
+
+	//check for health packs
 	if(map[x][y] == HEALTH_SYMBOL){
                 if(players[index].health == MAX_HEALTH){
 			printf("already at max health 100!\n");
@@ -476,6 +505,8 @@ void processTile(int index){
 
 		return;
 	}
+
+	//check for keys
 	if(map[x][y]==KEY_SYMBOL){
 		players[index].keys++;
         players[index].keysCollected++;
@@ -487,6 +518,7 @@ void processTile(int index){
 	}
 }
 
+//game ends if all treasures are collected of if all players are dead
 int checkGameEnd(){
 	if(remainingTreasures() ==0){
 		return 1;
@@ -503,9 +535,10 @@ int checkGameEnd(){
 	return 0;
 }
 
+
 void gameLoop(){
 	char answer;
-
+        //call printmap if game hasnt ended after every round
 	while(!checkGameEnd()){
 		printMap();
 
@@ -535,6 +568,8 @@ void gameLoop(){
 	showStats();
 }
 
+//saves game data to savegame.dat
+//uses "wb" to preserve data
 void saveGame(){
 	FILE *file= fopen(SAVE_FILE, "wb");
 	if (file == NULL){
@@ -552,12 +587,14 @@ void saveGame(){
 	printf("game saved!!\n");
 }
 
+//reads and restores all state from savegame.dat and validates beofre use
 int loadGame(){
 	FILE *file= fopen(SAVE_FILE, "rb");
 	if(file ==NULL){
 		return 0;
 	}
-
+        
+	//reads the prev file data in the same order we wrote it in
 	fread(&playerCount, sizeof(int), 1, file);
 
 	if(playerCount<1 || playerCount>MAX_PLAYERS){
@@ -573,7 +610,11 @@ int loadGame(){
 	fclose(file);
 	return 1;
 }
+
+
 void showScores(){
+
+	//print header
 	printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 	printf("                    GAME OVER                        \n");	
         printf("                   LEADERBOARD                       \n");
@@ -583,7 +624,8 @@ void showScores(){
 	for (int i=0; i<playerCount; i++){
 		sorted[i] = players[i];
         }
-
+        
+	//calculates final score of all players
 	for (int i=0; i<playerCount -1; i++){
 		for (int j=0; j<playerCount -i -1; j++){
 			int score1, score2;
@@ -607,6 +649,7 @@ void showScores(){
 		}
 	}
         
+	//adds score bonus and prints the final score relevant to player
 	for(int i=0; i<playerCount; i++){
 		if(sorted[i].alive){
 			int bonus = sorted[i].health/2;
@@ -616,7 +659,8 @@ void showScores(){
 			printf("%d. %s (%c): %d(dead)\n", i+1, sorted[i].name, sorted[i].symbol, sorted[i].score);
 		}
 	}
-
+        
+	//prints final rankings under leaderboard
 	if (playerCount >=1 && sorted[0].alive){
 		int top1= sorted[0].score + (sorted[0].health/2);
 
@@ -638,6 +682,7 @@ void showScores(){
 	}
 }
 
+//checks how many treasures are left on the map 
 int remainingTreasures(){
 	int count =0;
 	for(int r= 0; r<ROWS; r++){
@@ -650,6 +695,7 @@ int remainingTreasures(){
 	return count;
 }
 
+//circular buffer logic used to add event
 void addLog(int r, char*m){
 	char msg[MSG_LENGTH];
 	sprintf(msg, "[R%d] %s",r, m);
@@ -665,6 +711,7 @@ void addLog(int r, char*m){
 	}
 }
 
+//prints max_entries (log_display) from log array
 void printRecentLog(){
 	printf("\nrecent events: \n");
 	if(logCount < ENTRIES_MADE){
@@ -679,6 +726,7 @@ void printRecentLog(){
 	}
 }
 
+//writes entire log array to gamelog.txt at end of game
 void saveLog(){
 	FILE *file =fopen(LOG_FILE, "w");
 	if(file ==NULL){
@@ -692,6 +740,7 @@ void saveLog(){
 	fclose(file);
 }
 
+//shows player statistics at the end of the game after leaderboard
 void showStats(){
 	printf("+++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 	printf("                 PLAYER STATISTICS                 \n");
